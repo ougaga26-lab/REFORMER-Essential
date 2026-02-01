@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REFORMER 初級</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg:#0e0e0f; --surface:#1a1a1c; --surface2:#232325;
+    --accent:#c8f0d4; --accent-dim:rgba(200,240,212,0.12); --accent-glow:rgba(200,240,212,0.25);
+    --text:#e8e8ea; --text-dim:#7a7a80;
+    --red:#f0a0a0; --red-dim:rgba(240,160,160,0.15);
+    --gold:#f0d48a; --gold-dim:rgba(240,212,138,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'DM Sans',sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ─── PAGES ─── */
+  .page { display:none; min-height:100vh; }
+  .page.active { display:block; }
+
+  /* ═══════════════════════════════════════════════
+     HOME PAGE
+     ═══════════════════════════════════════════════ */
+  .home-header { text-align:center; padding:56px 20px 0; }
+  .home-header h1 {
+    font-family:'Playfair Display',serif;
+    font-size:clamp(1.7rem,5vw,2.2rem);
+    font-weight:700; letter-spacing:0.02em;
+    color:var(--accent); margin-bottom:6px;
+  }
+  .home-header .subtitle {
+    color:var(--text-dim); font-size:0.83rem;
+    font-weight:300; letter-spacing:0.04em;
+  }
+
+  /* nav links row */
+  .home-nav { display:flex; justify-content:center; gap:20px; padding:18px 0 0; }
+  .nav-link {
+    display:inline-flex; align-items:center; gap:5px;
+    color:var(--text-dim); font-size:.76rem;
+    background:none; border:none; cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    letter-spacing:0.05em; text-transform:uppercase;
+    transition:color .2s; padding:4px 0;
+  }
+  .nav-link:hover { color:var(--accent); }
+  .nav-link svg { width:13px; height:13px; opacity:.55; }
+
+  /* start content */
+  .start-content { text-align:center; padding:52px 24px 0; }
+  .start-content h2 { font-family:'Playfair Display',serif; font-size:1.35rem; color:var(--accent); margin-bottom:10px; }
+  .start-content p { color:var(--text-dim); font-size:.83rem; line-height:1.7; max-width:320px; margin:0 auto 32px; }
+  .start-btn {
+    display:block; width:100%; max-width:280px; margin:0 auto 10px;
+    padding:14px 20px; border-radius:14px;
+    background:var(--accent); color:var(--bg); border:none;
+    font-family:'DM Sans',sans-serif; font-size:.9rem; font-weight:500;
+    cursor:pointer; transition:transform .15s, box-shadow .2s;
+    box-shadow:0 0 16px var(--accent-glow);
+  }
+  .start-btn:active { transform:scale(.96); }
+  .start-btn.secondary {
+    background:transparent; border:1px solid var(--surface2);
+    color:var(--text-dim); box-shadow:none; font-size:.83rem;
+  }
+  .start-btn.secondary:active { transform:scale(.96); }
+
+  /* mid pick */
+  .mid-pick-wrap { padding:0 20px; max-width:420px; margin:0 auto; }
+  .mid-pick-head { text-align:center; padding:40px 0 8px; }
+  .mid-pick-head h2 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--accent); margin-bottom:6px; }
+  .mid-pick-head p { color:var(--text-dim); font-size:.8rem; }
+  .mid-pick-list { max-height:55vh; overflow-y:auto; padding:12px 0; -webkit-overflow-scrolling:touch; }
+  .mid-pick-item {
+    display:flex; align-items:center; gap:12px;
+    padding:13px 14px; border-radius:12px;
+    background:var(--surface); border:1px solid var(--surface2);
+    margin-bottom:6px; cursor:pointer; transition:border-color .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mid-pick-item:active { border-color:var(--accent); }
+  .mid-pick-item .mp-num { font-size:.7rem; color:var(--text-dim); width:20px; text-align:right; flex-shrink:0; }
+  .mid-pick-item .mp-name { font-size:.84rem; color:var(--text); }
+  .mid-pick-item .mp-name-en { font-size:.68rem; color:var(--text-dim); margin-top:1px; }
+  .mid-pick-back {
+    display:block; width:100%; text-align:center; margin-top:12px;
+    background:none; border:none; color:var(--text-dim); font-size:.78rem;
+    cursor:pointer; font-family:'DM Sans',sans-serif; padding:10px 0;
+  }
+
+  /* ═══════════════════════════════════════════════
+     EXAM PAGE
+     ═══════════════════════════════════════════════ */
+  .exam-top {
+    position:sticky; top:0; z-index:10;
+    background:var(--bg); border-bottom:1px solid var(--surface2);
+    padding:12px 20px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .exam-progress-wrap { flex:1; max-width:200px; }
+  .exam-progress-label { font-size:.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+  .exam-progress-bar { height:3px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+  .exam-progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .5s cubic-bezier(.4,0,.2,1); box-shadow:0 0 6px var(--accent-glow); }
+  .exam-timer {
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface); border:1px solid var(--surface2);
+    border-radius:16px; padding:5px 12px;
+  }
+  .exam-timer-icon { font-size:.8rem; opacity:.5; }
+  .exam-timer-val { font-size:.8rem; font-weight:500; color:var(--accent); letter-spacing:.06em; font-variant-numeric:tabular-nums; }
+
+  /* chain */
+  .chain {
+    max-width:480px; margin:0 auto;
+    padding:16px 20px 100px; position:relative;
+  }
+  .chain::before {
+    content:''; position:absolute;
+    left:50%; top:0; bottom:0; width:2px;
+    background:linear-gradient(to bottom,transparent,var(--surface2) 50px,var(--surface2));
+    transform:translateX(-50%); z-index:0;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    position:relative; z-index:1;
+    background:var(--surface); border:1px solid var(--surface2);
+    border-radius:16px; overflow:hidden;
+    animation:cardIn .35s cubic-bezier(.4,0,.2,1) both;
+  }
+  @keyframes cardIn { from{opacity:0;transform:translateY(16px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .card-header { display:flex; align-items:center; gap:12px; padding:16px 16px 14px; }
+  .battery { width:36px; height:20px; position:relative; flex-shrink:0; }
+  .battery-body { width:32px; height:20px; border:2px solid var(--accent); border-radius:5px; overflow:hidden; position:relative; }
+  .battery-fill { position:absolute; bottom:0; left:0; right:0; background:var(--accent); transition:height .4s ease; }
+  .battery-nub { position:absolute; right:-4px; top:50%; transform:translateY(-50%); width:3.5px; height:9px; background:var(--accent); border-radius:0 2px 2px 0; }
+  .card-title { flex:1; min-width:0; }
+  .card-title .label { font-size:.64rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px; }
+  .card-title .name { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-title .name-en { font-size:.64rem; color:var(--text-dim); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-status { font-size:.6rem; padding:3px 8px; border-radius:20px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; flex-shrink:0; }
+  .card-status.correct { background:var(--accent-dim); color:var(--accent); }
+  .card-status.pending { background:var(--gold-dim); color:var(--gold); animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  /* sub items */
+  .sub-items { border-top:1px solid var(--surface2); }
+  .sub-item { display:flex; align-items:center; gap:10px; padding:9px 16px 9px 30px; border-bottom:1px solid var(--surface2); animation:cardIn .3s ease both; }
+  .sub-item:last-child { border-bottom:none; }
+  .sub-item .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 5px var(--accent-glow); flex-shrink:0; }
+  .sub-item .sub-name { font-size:.78rem; color:var(--text); }
+  .sub-item .sub-name-en { font-size:.64rem; color:var(--text-dim); margin-left:5px; }
+
+  /* connector */
+  .connector { display:flex; justify-content:center; padding:8px 0; position:relative; z-index:1; }
+  .connector-line { width:2px; height:18px; background:var(--surface2); }
+
+  /* ─── 結束測驗 固定底列 ─── */
+  .end-bar {
+    position:fixed; bottom:0; left:0; right:0; z-index:50;
+    padding:10px 20px 28px;
+    background:var(--bg);
+    border-top:1px solid var(--surface2);
+  }
+  .end-btn {
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    width:100%; max-width:480px; margin:0 auto;
+    padding:13px 20px; border-radius:12px;
+    background:var(--red); border:none;
+    color:var(--bg); font-family:'DM Sans',sans-serif;
+    font-size:.84rem; font-weight:500; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:opacity .2s;
+  }
+  .end-btn:active { opacity:.7; }
+  .end-btn svg { width:14px; height:14px; opacity:.7; }
+
+  /* ─── OVERLAY (quiz) ─── */
+  .overlay {
+    position:fixed; top:0; left:0; right:0; bottom:71px;
+    background:rgba(0,0,0,.65);
+    z-index:100; display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .3s;
+  }
+  .overlay.open { opacity:1; pointer-events:auto; }
+
+  /* 收合狀態：遮光層透明 + pointer-events穿透，panel縮為頂部小條但自己可點 */
+  .overlay.collapsed {
+    opacity:1; pointer-events:none;
+    background:transparent;
+  }
+  .overlay.collapsed .quiz-panel {
+    transform:translateY(calc(100% - 34px));
+    pointer-events:auto;
+    border-radius:16px 16px 0 0;
+  }
+
+  .quiz-panel {
+    background:var(--surface); border-radius:20px 20px 0 0;
+    width:100%; max-width:480px;
+    padding:10px 20px 18px;
+    transform:translateY(100%); transition:transform .38s cubic-bezier(.4,0,.2,1);
+    max-height:calc(100vh - 71px - 20px); overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  .overlay.open .quiz-panel { transform:translateY(0); }
+
+  /* 收合鍵 */
+  .quiz-collapse-btn {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:100%; height:24px; margin-bottom:6px;
+    background:none; border:none; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .collapse-handle { width:32px; height:3px; background:var(--surface2); border-radius:2px; }
+  .collapse-arrow {
+    width:0; height:0;
+    border-left:4px solid transparent; border-right:4px solid transparent;
+    border-top:4px solid var(--text-dim);
+    transition:transform .22s;
+  }
+  .overlay.collapsed .collapse-arrow { transform:rotate(180deg); }
+
+  .quiz-step-label { font-size:.64rem; text-transform:uppercase; letter-spacing:.1em; color:var(--gold); margin-bottom:5px; }
+  .quiz-step-label:empty { display:none; margin:0; }
+  .quiz-question { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--text); margin-bottom:12px; line-height:1.4; }
+
+  /* options — 中英一行 */
+  .options { display:flex; flex-direction:column; gap:5px; }
+  .option {
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface2); border:1px solid transparent;
+    border-radius:10px; padding:8px 12px;
+    cursor:pointer; transition:border-color .18s, background .18s;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .option:active { border-color:rgba(200,240,212,0.3); }
+  .option .opt-key {
+    width:24px; height:24px; border-radius:6px;
+    background:var(--surface); border:1px solid var(--surface2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.7rem; color:var(--text-dim); font-weight:500; flex-shrink:0;
+  }
+  /* 中英一行容器 */
+  .option .opt-label { font-size:.82rem; color:var(--text); line-height:1.35; flex:1; min-width:0; }
+  .option .opt-label .opt-en { color:var(--text-dim); font-size:.68rem; margin-left:4px; white-space:nowrap; }
+
+  .option.correct-pick { border-color:var(--accent); background:var(--accent-dim); }
+  .option.correct-pick .opt-key { background:var(--accent); color:var(--bg); border-color:transparent; }
+  .option.wrong-pick { border-color:var(--red); background:var(--red-dim); }
+  .option.wrong-pick .opt-key { background:var(--red); color:var(--bg); border-color:transparent; }
+  .option.disabled { pointer-events:none; opacity:.4; }
+  .option.wrong-pick.disabled { opacity:.6; }
+
+  /* feedback */
+  .feedback { margin-top:8px; font-size:.76rem; color:var(--text-dim); min-height:18px; display:flex; align-items:center; gap:6px; opacity:0; transition:opacity .2s; }
+  .feedback.show { opacity:1; }
+
+
+  /* ─── FINISH ─── */
+  .finish-banner { text-align:center; padding:80px 24px; }
+  .finish-banner h2 { font-family:'Playfair Display',serif; font-size:1.7rem; color:var(--gold); margin-bottom:6px; }
+  .finish-banner .finish-time { color:var(--accent); font-size:.88rem; margin-bottom:8px; font-weight:500; }
+  .finish-banner .finish-mode { color:var(--text-dim); font-size:.78rem; margin-bottom:24px; }
+  .finish-banner p { color:var(--text-dim); font-size:.84rem; margin-bottom:20px; }
+  .restart-btn {
+    display:block; width:100%; max-width:240px; margin:0 auto;
+    padding:13px; border-radius:12px;
+    background:var(--accent); color:var(--bg); border:none;
+    font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500;
+    cursor:pointer; transition:opacity .2s;
+  }
+  .restart-btn:active { opacity:.7; }
+
+  /* ═══════════════════════════════════════════════
+     HISTORY PAGE
+     ═══════════════════════════════════════════════ */
+  .history-page { padding:0 20px 60px; max-width:480px; margin:0 auto; }
+  .history-header { display:flex; align-items:center; justify-content:space-between; padding:48px 0 20px; }
+  .history-header h2 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--accent); }
+  .back-btn { background:none; border:none; color:var(--text-dim); font-size:.76rem; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:4px; padding:8px 0; }
+  .back-btn:active { color:var(--text); }
+
+  .history-section-title { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-dim); margin:22px 0 10px; }
+
+  /* record item — 3 badges */
+  .record-item {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--surface2);
+    border-radius:10px; padding:12px 14px; margin-bottom:6px;
+  }
+  .record-date { font-size:.8rem; color:var(--text); font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .record-badges { display:flex; gap:5px; flex-wrap:wrap; margin-left:auto; }
+  .record-badge {
+    font-size:.6rem; padding:3px 7px; border-radius:10px;
+    font-weight:500; letter-spacing:.03em; white-space:nowrap;
+  }
+  .record-badge.full { background:var(--accent-dim); color:var(--accent); }
+  .record-badge.partial { background:var(--gold-dim); color:var(--gold); }
+  .record-badge.complete { background:var(--accent-dim); color:var(--accent); }
+  .record-badge.interrupted { background:var(--red-dim); color:var(--red); }
+
+  /* analysis */
+  .analysis-item {
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--accent);
+    border-radius:10px; padding:11px 12px; margin-bottom:4px;
+  }
+  .a-battery { width:26px; height:15px; position:relative; flex-shrink:0; }
+  .a-bat-body { width:23px; height:15px; border:1.5px solid var(--accent); border-radius:4px; overflow:hidden; position:relative; }
+  .a-bat-fill { position:absolute; bottom:0; left:0; right:0; background:var(--accent); }
+  .a-bat-nub { position:absolute; right:-3px; top:50%; transform:translateY(-50%); width:2.5px; height:6px; background:var(--accent); border-radius:0 2px 2px 0; }
+  .a-info { flex:1; min-width:0; }
+  .a-name { font-size:.78rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .a-name-en { font-size:.64rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .a-err { font-size:.7rem; font-weight:500; white-space:nowrap; flex-shrink:0; }
+  .a-err.zero { color:var(--accent); }
+  .a-err.low { color:var(--gold); }
+  .a-err.high { color:var(--red); }
+
+  .analysis-sub { margin-left:18px; }
+  .analysis-sub .analysis-item { padding:7px 12px; border-radius:8px; border-color:var(--surface2); }
+
+  .clear-btn {
+    display:block; width:100%; margin-top:28px;
+    padding:12px; border-radius:10px;
+    background:transparent; border:1px solid var(--red-dim);
+    color:var(--red); font-family:'DM Sans',sans-serif;
+    font-size:.78rem; cursor:pointer; transition:background .2s;
+  }
+  .clear-btn:active { background:var(--red-dim); }
+
+  .more-btn {
+    display:block; width:100%; margin-top:4px;
+    padding:10px; border-radius:8px;
+    background:transparent; border:1px solid var(--surface2);
+    color:var(--text-dim); font-family:'DM Sans',sans-serif;
+    font-size:.76rem; cursor:pointer; transition:border-color .2s, color .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .more-btn:active { border-color:var(--accent); color:var(--accent); }
+
+  .empty-msg { color:var(--text-dim); font-size:.8rem; text-align:center; padding:36px 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: HOME
+     ═══════════════════════════════════════════════ -->
+<div class="page active" id="pageHome">
+  <div class="home-header">
+    <h1>REFORMER-初級</h1>
+    <div class="subtitle">考驗你的記憶力!</div>
+  </div>
+  <div class="home-nav">
+    <button class="nav-link" onclick="goHistory()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 10.5,10"/></svg>
+      歷史紀錄
+    </button>
+  </div>
+
+  <!-- start buttons -->
+  <div id="startScreen">
+    <div class="start-content">
+      <h2>準備開始？</h2>
+      <p>依序背出所有皮拉提斯動作。先選正確的動作名稱，再判斷是系列動作還是單一動作。系列動作還要依序選出每個次項目。</p>
+      <button class="start-btn" onclick="chooseStart('full')">從頭開始</button>
+      <button class="start-btn secondary" onclick="chooseStart('mid')">從中間開始</button>
+    </div>
+  </div>
+
+  <!-- mid pick list -->
+  <div id="midPickScreen" style="display:none">
+    <div class="mid-pick-wrap">
+      <div class="mid-pick-head">
+        <h2>選擇開始位置</h2>
+        <p>從哪個動作開始練習？</p>
+      </div>
+      <div class="mid-pick-list" id="midPickList"></div>
+      <button class="mid-pick-back" onclick="backToStart()">← 返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: EXAM
+     ═══════════════════════════════════════════════ -->
+<div class="page" id="pageExam">
+  <!-- sticky top bar: progress + timer -->
+  <div class="exam-top">
+    <div class="exam-progress-wrap">
+      <div class="exam-progress-label"><span id="progressText">0 / 29</span></div>
+      <div class="exam-progress-bar"><div class="exam-progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div class="exam-timer">
+      <span class="exam-timer-icon">⏱</span>
+      <span class="exam-timer-val" id="timerVal">00:00</span>
+    </div>
+  </div>
+
+  <!-- chain -->
+  <div class="chain" id="chain"></div>
+
+  <!-- finish banner (shown inside exam page) -->
+  <div class="finish-banner" id="finishBanner" style="display:none">
+    <h2 id="finishTitle">🎉 完成！</h2>
+    <div class="finish-time" id="finishTime"></div>
+    <div class="finish-mode" id="finishMode"></div>
+    <button class="restart-btn" onclick="goHome()">回到首頁</button>
+  </div>
+
+  <!-- fixed bottom: 結束測驗 -->
+  <div class="end-bar" id="endBar">
+    <button class="end-btn" onclick="endExam()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="4" height="10" rx="1"/><rect x="9" y="3" width="4" height="10" rx="1"/></svg>
+      結束測驗
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: HISTORY
+     ═══════════════════════════════════════════════ -->
+<div class="page" id="pageHistory">
+  <div class="history-page">
+    <div class="history-header">
+      <h2>歷史紀錄</h2>
+      <button class="back-btn" onclick="goHome()">← 返回</button>
+    </div>
+    <div class="history-section-title">測驗記錄</div>
+    <div id="recordsList"></div>
+    <div class="history-section-title">數據分析</div>
+    <div id="analysisList"></div>
+    <button class="clear-btn" onclick="clearHistory()">清空歷史紀錄</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     QUIZ OVERLAY
+     ═══════════════════════════════════════════════ -->
+<div class="overlay" id="overlay">
+  <div class="quiz-panel">
+    <button class="quiz-collapse-btn" onclick="toggleCollapse()">
+      <span class="collapse-handle"></span>
+      <span class="collapse-arrow"></span>
+    </button>
+    <div class="quiz-step-label" id="quizStepLabel"></div>
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="options" id="quizOptions"></div>
+    <div class="feedback" id="quizFeedback"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+const RAW=[
+  {type:"series",main:"腳部練習",mainEn:"FOOT WORK",subs:[{zh:"腳掌分開雙踵併攏",en:"TOES APART HEELS TOGETHER"},{zh:"腳趾抓桿",en:"WRAP TOES ON BAR"},{zh:"雙踵抵在腳踏桿上",en:"HEELS ON BAR"},{zh:"腳尖掂起",en:"HIGH HALF TOE"},{zh:"落踵與提踵",en:"LOWER & LIFT"}]},
+  {type:"series",main:"第二種姿勢",mainEn:"SECOND POSITION",subs:[{zh:"平行",en:"PARALLEL"},{zh:"外旋",en:"LATERALLY ROTATED"},{zh:"內旋",en:"MEDIALLY ROTATED"}]},
+  {type:"series",main:"單腿練習",mainEn:"SINGLE LEG",subs:[{zh:"單腿彎曲",en:"ONE LEG BENT"},{zh:"腳踏車式動作",en:"BICYCLE"},{zh:"單踵練習",en:"SINGLE HEEL"}]},
+  {type:"single",main:"百次拍擊",mainEn:"HUNDRED",subs:[]},
+  {type:"series",main:"屈伸練習",mainEn:"BEND & STRETCH",subs:[{zh:"平行",en:"PARALLEL"},{zh:"外旋",en:"LATERALLY ROTATED"},{zh:"內旋",en:"MEDIALLY ROTATED"}]},
+  {type:"series",main:"抬腿與放腿",mainEn:"LIFT & LOWER",subs:[{zh:"平行",en:"PARALLEL"},{zh:"外旋",en:"LATERALLY ROTATED"}]},
+  {type:"single",main:"伸展內收肌",mainEn:"ADDUCTOR STRETCH",subs:[]},
+  {type:"single",main:"脊椎捲曲準備動作",mainEn:"SHORT SPINE PREP",subs:[]},
+  {type:"single",main:"脊椎捲曲",mainEn:"SHORT SPINE",subs:[]},
+  {type:"series",main:"中背部系列動作",mainEn:"MIDBACK SERIES",subs:[{zh:"下壓肱三頭肌",en:"TRICEPS PRESS"},{zh:"雙臂伸直下壓",en:"STRAIGHT DOWN"},{zh:"四十五度",en:"FORTY-FIVE DEGREES"},{zh:"側展",en:"SIDE"},{zh:"畫圈",en:"CIRCLES"}]},
+  {type:"series",main:"後划準備動作",mainEn:"BACK ROWING PREPS",subs:[{zh:"划船動作",en:"PLOW"},{zh:"分開雙肘",en:"OPEN ELBOWS"},{zh:"飛翔動作",en:"AIRPLANE"},{zh:"二頭肌捲曲",en:"BICEPS CURLS"},{zh:"肱三頭肌",en:"TRICEPS"},{zh:"向後捲動",en:"ROLL-DOWN"},{zh:"向後捲動-二頭肌捲曲",en:"ROLL-DOWN WITH BICEPS CURLS"},{zh:"側旋後捲",en:"ROLL-DOWN WITH OBLIQUES"}]},
+  {type:"series",main:"側坐手臂準備動作",mainEn:"SIDE ARM PREPS SITTING",subs:[{zh:"內旋",en:"INTERNAL ROTATION"},{zh:"外旋",en:"EXTERNAL ROTATION"},{zh:"內收",en:"ADDUCTION"},{zh:"外展",en:"ABDUCTION"}]},
+  {type:"single",main:"側轉坐姿",mainEn:"SIDE TWIST SITTING",subs:[]},
+  {type:"series",main:"前划準備動作",mainEn:"FRONT ROWING PREPS",subs:[{zh:"向前伸直",en:"STRAIGHT FORWARD"},{zh:"第二種姿勢",en:"SECOND POSITION"},{zh:"雙手上托",en:"OFFERING"}]},
+  {type:"series",main:"腹部按摩",mainEn:"STOMACH MASSAGE",subs:[{zh:"準備動作",en:"PREP"},{zh:"弓背",en:"ROUND BACK"},{zh:"直背",en:"STRAIGHT BACK"}]},
+  {type:"series",main:"雙臂拉動拉環(盒子豎放)",mainEn:"ARMS PULLING STRAPS, LONG BOX",subs:[{zh:"划船動作",en:"PLOW"},{zh:"飛翔動作",en:"AIRPLANE"},{zh:"肱三頭肌",en:"TRICEPS"}]},
+  {type:"single",main:"弓背(盒子橫放)",mainEn:"ROUND BACK, SHORT BOX",subs:[]},
+  {type:"single",main:"直背(盒子橫放)",mainEn:"STRAIGHT BACK, SHORT BOX",subs:[]},
+  {type:"single",main:"扭轉(盒子橫放)",mainEn:"TWIST, SHORT BOX",subs:[]},
+  {type:"single",main:"樹姿(盒子橫放)",mainEn:"TREE, SHORT BOX",subs:[]},
+  {type:"series",main:"大象姿",mainEn:"ELEPHANT",subs:[{zh:"弓背",en:"ROUND BACK"},{zh:"直背",en:"STRAIGHT BACK"}]},
+  {type:"single",main:"美人魚姿",mainEn:"MERMAID",subs:[]},
+  {type:"series",main:"雙腿畫弧",mainEn:"LEG CIRCLES",subs:[{zh:"平行",en:"PARALLEL"},{zh:"外旋",en:"LATERALLY ROTATED"},{zh:"內旋",en:"MEDIALLY ROTATED"}]},
+  {type:"series",main:"膝部伸展",mainEn:"KNEE STRETCHES",subs:[{zh:"準備動作",en:"PREP"},{zh:"弓背",en:"ROUND BACK"},{zh:"直背",en:"STRAIGHT BACK"}]},
+  {type:"single",main:"跑步運動",mainEn:"RUNNING",subs:[]},
+  {type:"single",main:"髖部上抬",mainEn:"HIP LIFT",subs:[]},
+  {type:"single",main:"髖部起伏",mainEn:"HIP ROLLS",subs:[]},
+  {type:"single",main:"單側大腿伸展",mainEn:"SINGLE THIGH STRETCH",subs:[]},
+  {type:"series",main:"側劈叉",mainEn:"SIDE SPLITS",subs:[{zh:"外展",en:"ABDUCTION"},{zh:"內收",en:"ADDUCTION"}]}
+];
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let state={
+  currentIdx:0, phase:null, subIdx:0,
+  completedMains:[], startIdx:0,
+  mode:null,          // 'full'|'mid'
+  finished:false,     // true = 完成到最後; false = 中斷
+  timerSec:0, timerInterval:null,
+  errors:{}
+};
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function updateProgress(){
+  const total=RAW.length-state.startIdx;
+  const done=state.completedMains.length;
+  document.getElementById('progressText').textContent=done+' / '+total;
+  document.getElementById('progressFill').style.width=(done/total*100)+'%';
+}
+
+// timer
+function startTimer(){ state.timerSec=0; tickTimer(); state.timerInterval=setInterval(tickTimer,1000); }
+function stopTimer(){ if(state.timerInterval){clearInterval(state.timerInterval);state.timerInterval=null;} }
+function tickTimer(){ state.timerSec++; document.getElementById('timerVal').textContent=fmtTime(state.timerSec); }
+function fmtTime(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+// errors
+function initErrors(){ state.errors={}; RAW.forEach((_,i)=>{ state.errors[i]={mainErrors:0,typeErrors:0,subErrors:[]}; RAW[i].subs.forEach(()=>state.errors[i].subErrors.push(0)); }); }
+function recordError(idx,type,si){ const e=state.errors[idx]; if(!e)return; if(type==='main')e.mainErrors++; else if(type==='type')e.typeErrors++; else if(type==='sub')e.subErrors[si]++; }
+
+// ═══════════════════════════════════════════════════
+// PAGE NAV
+// ═══════════════════════════════════════════════════
+function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+function goHome(){
+  stopTimer();
+  closeOverlay();
+  // reset 首頁內部狀態，確保回來後看見開始按鈕
+  document.getElementById('startScreen').style.display='block';
+  document.getElementById('midPickScreen').style.display='none';
+  showPage('pageHome');
+}
+function goHistory(){ showPage('pageHistory'); renderHistory(); }
+
+// ═══════════════════════════════════════════════════
+// START FLOW
+// ═══════════════════════════════════════════════════
+function chooseStart(mode){
+  state.mode=mode;
+  if(mode==='full') beginGame(0);
+  else {
+    document.getElementById('startScreen').style.display='none';
+    document.getElementById('midPickScreen').style.display='block';
+    document.getElementById('midPickList').innerHTML=RAW.map((item,i)=>
+      `<div class="mid-pick-item" onclick="beginGame(${i})">
+         <span class="mp-num">${i+1}</span>
+         <div><div class="mp-name">${item.main}</div><div class="mp-name-en">${item.mainEn}</div></div>
+       </div>`
+    ).join('');
+  }
+}
+function backToStart(){
+  document.getElementById('midPickScreen').style.display='none';
+  document.getElementById('startScreen').style.display='block';
+}
+function beginGame(fromIdx){
+  state.startIdx=fromIdx; state.currentIdx=fromIdx;
+  state.completedMains=[]; state.phase=null; state.subIdx=0;
+  state.finished=false;
+  initErrors();
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('midPickScreen').style.display='none';
+  document.getElementById('finishBanner').style.display='none';
+  document.getElementById('endBar').style.display='flex';
+  document.getElementById('chain').innerHTML='';
+  showPage('pageExam');
+  updateProgress();
+  rebuildChain();
+  startTimer();
+  setTimeout(()=>startNextMainQuiz(),350);
+}
+
+// ═══════════════════════════════════════════════════
+// END EXAM (中斷)
+// ═══════════════════════════════════════════════════
+function endExam(){
+  closeOverlay();
+  stopTimer();
+  state.finished=false;
+  saveRecord();
+  document.getElementById('endBar').style.display='none';
+  document.getElementById('chain').style.display='none';
+  const fb=document.getElementById('finishBanner');
+  document.getElementById('finishTitle').textContent='測驗中斷';
+  document.getElementById('finishTime').textContent='用時：'+fmtTime(state.timerSec);
+  document.getElementById('finishMode').textContent=(state.mode==='full'?'完整測驗':'局部測驗')+' · 中斷';
+  fb.style.display='block';
+}
+
+// ═══════════════════════════════════════════════════
+// CHAIN
+// ═══════════════════════════════════════════════════
+function rebuildChain(){
+  const chain=document.getElementById('chain');
+  let html='';
+  state.completedMains.forEach(idx=>{
+    html+=renderDoneCard(idx)+`<div class="connector"><div class="connector-line"></div></div>`;
+  });
+  if(state.currentIdx<RAW.length && (state.phase==='selectType'||state.phase==='selectSub')){
+    html+=renderActiveCard(state.currentIdx)+`<div class="connector"><div class="connector-line"></div></div>`;
+  }
+  chain.innerHTML=html;
+  // 捲動到當前最後一張card（配合收合後觀看）
+  requestAnimationFrame(()=>{
+    const lastCard=chain.querySelector('.card:last-of-type');
+    if(lastCard) lastCard.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+}
+
+function renderDoneCard(idx){
+  const it=RAW[idx];
+  let sub='';
+  if(it.type==='series') sub=`<div class="sub-items">`+it.subs.map(s=>`<div class="sub-item"><div class="dot"></div><span class="sub-name">${s.zh}<span class="sub-name-en">${s.en}</span></span></div>`).join('')+`</div>`;
+  return `<div class="card"><div class="card-header">
+    <div class="battery"><div class="battery-body"><div class="battery-fill" style="height:100%"></div></div><div class="battery-nub"></div></div>
+    <div class="card-title"><div class="label">${it.type==='series'?'系列動作':'單一動作'} · #${idx+1}</div><div class="name">${it.main}</div><div class="name-en">${it.mainEn}</div></div>
+    <span class="card-status correct">完成</span></div>${sub}</div>`;
+}
+function renderActiveCard(idx){
+  const it=RAW[idx];
+  const pct=it.type==='series'?(state.subIdx/it.subs.length*100):0;
+  let sub='';
+  if(it.type==='series'&&state.subIdx>0) sub=`<div class="sub-items">`+it.subs.slice(0,state.subIdx).map(s=>`<div class="sub-item"><div class="dot"></div><span class="sub-name">${s.zh}<span class="sub-name-en">${s.en}</span></span></div>`).join('')+`</div>`;
+  return `<div class="card"><div class="card-header">
+    <div class="battery"><div class="battery-body"><div class="battery-fill" style="height:${pct}%"></div></div><div class="battery-nub"></div></div>
+    <div class="card-title"><div class="label">${it.type==='series'?'系列動作':'單一動作'} · #${idx+1}</div><div class="name">${it.main}</div><div class="name-en">${it.mainEn}</div></div>
+    <span class="card-status pending">進行中</span></div>${sub}</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// QUIZ FLOW
+// ═══════════════════════════════════════════════════
+function startNextMainQuiz(){ if(state.currentIdx>=RAW.length)return; state.phase='selectMain'; showMainQuiz(); openOverlay(); }
+
+function showMainQuiz(){
+  const idx=state.currentIdx, correct=RAW[idx];
+  const wrongs=shuffle(RAW.filter((_,i)=>i!==idx)).slice(0,4);
+  const options=shuffle([correct,...wrongs]);
+  const isFirst=(idx===state.startIdx);
+  const stepLabel=isFirst?'':'STEP 1 — 選擇下一個動作';
+  const question=isFirst?'第一個動作是？':'接下來應該是哪個動作？';
+  renderQuiz(stepLabel,question,
+    options.map(o=>({zh:o.main,en:o.mainEn})), correct.main,
+    (ok)=>{
+      if(!ok){ recordError(idx,'main'); return; }
+      state.phase='selectType'; rebuildChain();
+      setTimeout(()=>{ showTypeQuiz(); openOverlay(); },420);
+    }
+  );
+}
+
+function showTypeQuiz(){
+  const it=RAW[state.currentIdx];
+  const correct=it.type==='series'?'系列動作':'單一動作';
+  renderQuiz('STEP 2 — 判斷動作類型',`「${it.main}」是哪種類型？`,
+    shuffle([{zh:'系列動作',en:'Series'},{zh:'單一動作',en:'Single'}]), correct,
+    (ok)=>{
+      if(!ok){ recordError(state.currentIdx,'type'); return; }
+      setTimeout(()=>{
+        if(it.type==='single') finishCurrentItem();
+        else { state.phase='selectSub'; state.subIdx=0; rebuildChain(); showSubQuiz(); openOverlay(); }
+      },420);
+    }
+  );
+}
+
+function showSubQuiz(){
+  const it=RAW[state.currentIdx], correctObj=it.subs[state.subIdx];
+  // 從同系列其他次項目抓（最多3個）
+  const sameSubs=it.subs.filter((_,i)=>i!==state.subIdx);
+  const innerPick=shuffle(sameSubs).slice(0,3);
+
+  // 如果同內部不夠3個，從外面補到3個
+  let wrongs=[...innerPick];
+  if(wrongs.length<3){
+    const allOther=[]; RAW.forEach((r,ri)=>{ if(ri!==state.currentIdx) r.subs.forEach(s=>allOther.push(s)); });
+    const pool=allOther.filter(s=>s.zh!==correctObj.zh && !wrongs.some(w=>w.zh===s.zh));
+    wrongs.push(...shuffle(pool).slice(0, 3-wrongs.length));
+  }
+
+  // A-D：正確答案 + 前3個錯誤，隨機排列
+  // E：固定為「該系列沒有其他動作了」
+  const NONE_ITEM={zh:"該系列沒有其他動作了", en:"No other moves in this series"};
+  const firstFour=shuffle([correctObj,...wrongs.slice(0,3)]);
+  const options=[...firstFour, NONE_ITEM];
+  renderQuiz('',`「${it.main}」的第 ${state.subIdx+1} 個動作是？`,
+    options.map(o=>({zh:o.zh,en:o.en})), correctObj.zh,
+    (ok)=>{
+      if(!ok){ recordError(state.currentIdx,'sub',state.subIdx); return; }
+      state.subIdx++; rebuildChain();
+      setTimeout(()=>{
+        if(state.subIdx>=it.subs.length) finishCurrentItem();
+        else { showSubQuiz(); openOverlay(); }
+      },420);
+    }
+  );
+}
+
+// ═══════════════════════════════════════════════════
+// QUIZ RENDER
+// renderQuiz：生成選項並渲染（新題時調用）
+// resetQuizUI：錯誤後只清掉紅色標記，恢復可點擊，選項內容不變
+// ═══════════════════════════════════════════════════
+function renderQuiz(stepLabel,question,options,correctZh,onDone){
+  document.getElementById('quizStepLabel').textContent=stepLabel;
+  document.getElementById('quizQuestion').textContent=question;
+  const keys=['A','B','C','D','E'];
+  document.getElementById('quizOptions').innerHTML=options.map((o,i)=>
+    `<div class="option" id="opt-${i}" onclick="pickOption(${i})">
+       <div class="opt-key">${keys[i]}</div>
+       <div class="opt-label">${o.zh} <span class="opt-en">| ${o.en}</span></div>
+     </div>`
+  ).join('');
+  document.getElementById('quizFeedback').className='feedback';
+  document.getElementById('quizFeedback').innerHTML='';
+  window._quiz={options,correctZh,onDone,locked:false};
+}
+
+function resetQuizUI(){
+  // 只清掉紅色標記和反饋，選項內容不動，恢復可點擊
+  document.querySelectorAll('.option').forEach(el=>{
+    el.classList.remove('wrong-pick','correct-pick','disabled');
+  });
+  document.getElementById('quizFeedback').className='feedback';
+  document.getElementById('quizFeedback').innerHTML='';
+  if(window._quiz) window._quiz.locked=false;
+}
+
+function pickOption(idx){
+  const q=window._quiz;
+  if(!q||q.locked) return;
+  q.locked=true;
+  const chosen=q.options[idx].zh;
+  const ok=(chosen===q.correctZh);
+  const fb=document.getElementById('quizFeedback');
+  const el=document.getElementById('opt-'+idx);
+
+  if(ok){
+    el.classList.add('correct-pick');
+    fb.innerHTML='<span class="f-icon">✓</span> 正確！';
+    fb.className='feedback show';
+    // 正確：閃綠 → 關閉 overlay → 進下一步
+    setTimeout(()=>{ closeOverlay(); setTimeout(()=>q.onDone(true),80); },400);
+  } else {
+    // 錯誤：閃紅 + 訊息，維持1秒，然後只重置UI（選項不變）
+    el.classList.add('wrong-pick');
+    fb.innerHTML='<span class="f-icon">✗</span> 再試一次！';
+    fb.className='feedback show';
+    setTimeout(()=>{
+      q.onDone(false);   // 記錄錯誤
+      resetQuizUI();     // 清掉紅色，恢復點擊，選項內容不動
+    },1000);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// FINISH (完成全部)
+// ═══════════════════════════════════════════════════
+function finishCurrentItem(){
+  state.completedMains.push(state.currentIdx);
+  state.currentIdx++; state.phase=null; state.subIdx=0;
+  updateProgress(); rebuildChain();
+
+  if(state.currentIdx>=RAW.length){
+    stopTimer();
+    state.finished=true;
+    saveRecord();
+    document.getElementById('endBar').style.display='none';
+    document.getElementById('chain').style.display='none';
+    const fb=document.getElementById('finishBanner');
+    document.getElementById('finishTitle').textContent='🎉 完成！';
+    document.getElementById('finishTime').textContent='完成時間：'+fmtTime(state.timerSec);
+    document.getElementById('finishMode').textContent=(state.mode==='full'?'完整測驗':'局部測驗')+' · 完成';
+    fb.style.display='block';
+  } else {
+    setTimeout(()=>startNextMainQuiz(),450);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// OVERLAY + 收合
+// ═══════════════════════════════════════════════════
+function openOverlay(){
+  const ov=document.getElementById('overlay');
+  // 先捲動到當前位置，讓收合後看見正確位置（3.4）
+  const chain=document.getElementById('chain');
+  const lastCard=chain.querySelector('.card:last-of-type');
+  if(lastCard){
+    lastCard.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  ov.classList.remove('collapsed');
+  ov.classList.add('open');
+}
+function closeOverlay(){
+  const ov=document.getElementById('overlay');
+  ov.classList.remove('open','collapsed');
+}
+function toggleCollapse(){
+  const ov=document.getElementById('overlay');
+  if(ov.classList.contains('collapsed')){
+    // 展開回來
+    ov.classList.remove('collapsed');
+    ov.classList.add('open');
+  } else {
+    // 收合：遮光消失，panel縮為小條，觸摸穿透背後
+    ov.classList.remove('open');
+    ov.classList.add('collapsed');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════
+const SKEY='pilates_history';
+function loadHistory(){ try{return JSON.parse(localStorage.getItem(SKEY))||[];}catch(e){return[];} }
+function saveHistory(a){ localStorage.setItem(SKEY,JSON.stringify(a)); }
+
+function saveRecord(){
+  const h=loadHistory();
+  const now=new Date();
+  h.push({
+    date:now.getFullYear()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0'),
+    time:String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+    mode:state.mode,
+    startIdx:state.startIdx,
+    finished:state.finished,
+    duration:state.timerSec,
+    errors:JSON.parse(JSON.stringify(state.errors))
+  });
+  saveHistory(h);
+}
+
+function renderHistory(){
+  const history=loadHistory();
+
+  // ─── 測驗記錄 ───
+  const rList=document.getElementById('recordsList');
+  if(!history.length){ rList.innerHTML=`<div class="empty-msg">沒有測驗記錄</div>`; }
+  else {
+    const reversed=[...history].reverse();
+    const SHOW_LIMIT=5;
+    const allHtml=reversed.map(r=>{
+      const modeClass=r.mode==='full'?'full':'partial';
+      const modeLabel=r.mode==='full'?'完整測驗':'局部測驗';
+      const statusClass=r.finished?'complete':'interrupted';
+      const statusLabel=r.finished?'完成':'中斷';
+      return `<div class="record-item">
+        <div class="record-date">${r.date} ${r.time}</div>
+        <div class="record-badges">
+          <span class="record-badge ${modeClass}">${modeLabel}</span>
+          <span class="record-badge ${statusClass}">${statusLabel}</span>
+        </div>
+      </div>`;
+    });
+    if(reversed.length<=SHOW_LIMIT){
+      rList.innerHTML=allHtml.join('');
+    } else {
+      const firstPart=allHtml.slice(0,SHOW_LIMIT).join('');
+      const restPart=allHtml.slice(SHOW_LIMIT).join('');
+      rList.innerHTML=firstPart
+        +`<div id="recordsMore" style="display:none">${restPart}</div>`
+        +`<button class="more-btn" onclick="toggleRecords()">更多紀錄... (${reversed.length-SHOW_LIMIT})</button>`;
+    }
+  }
+
+  // ─── 數據分析 ───
+  const totalErr={}, totalAtt={};
+  RAW.forEach((_,i)=>{ totalErr[i]={main:0,type:0,sub:[]}; totalAtt[i]={main:0,type:0,sub:[]}; RAW[i].subs.forEach(()=>{ totalErr[i].sub.push(0); totalAtt[i].sub.push(0); }); });
+
+  history.forEach(r=>{
+    if(!r.errors)return;
+    Object.keys(r.errors).forEach(k=>{
+      const idx=parseInt(k), e=r.errors[k];
+      if(!totalErr[idx])return;
+      totalErr[idx].main+=(e.mainErrors||0); totalAtt[idx].main+=1;
+      totalErr[idx].type+=(e.typeErrors||0); totalAtt[idx].type+=1;
+      if(e.subErrors) e.subErrors.forEach((c,si)=>{
+        if(totalErr[idx].sub[si]!==undefined){ totalErr[idx].sub[si]+=c; totalAtt[idx].sub[si]+=1; }
+      });
+    });
+  });
+
+  const aList=document.getElementById('analysisList');
+  if(!history.length){ aList.innerHTML=`<div class="empty-msg">沒有數據</div>`; }
+  else {
+    aList.innerHTML=RAW.map((item,idx)=>{
+      const e=totalErr[idx], a=totalAtt[idx];
+      let tErr=e.main+e.type, tAtt=a.main+a.type;
+      e.sub.forEach((c,si)=>{ tErr+=c; tAtt+=a.sub[si]; });
+      const rate=tAtt>0?Math.round(tErr/tAtt*100):0;
+      const cls=rate===0?'zero':(rate<=30?'low':'high');
+
+      let subsHtml='';
+      if(item.type==='series'){
+        subsHtml=`<div class="analysis-sub">`+item.subs.map((s,si)=>{
+          const sE=totalErr[idx].sub[si], sA=totalAtt[idx].sub[si];
+          const sR=sA>0?Math.round(sE/sA*100):0;
+          const sC=sR===0?'zero':(sR<=30?'low':'high');
+          return `<div class="analysis-item">
+            <div class="a-battery" style="width:20px;height:12px">
+              <div class="a-bat-body" style="width:17px;height:12px"><div class="a-bat-fill" style="height:${100-sR}%"></div></div>
+              <div class="a-bat-nub" style="width:2px;height:5px"></div>
+            </div>
+            <div class="a-info"><div class="a-name" style="font-size:.72rem">${s.zh}</div><div class="a-name-en" style="font-size:.6rem">${s.en}</div></div>
+            <div class="a-err ${sC}">${sR}%</div>
+          </div>`;
+        }).join('')+`</div>`;
+      }
+
+      return `<div class="analysis-item">
+        <div class="a-battery">
+          <div class="a-bat-body"><div class="a-bat-fill" style="height:${100-rate}%"></div></div>
+          <div class="a-bat-nub"></div>
+        </div>
+        <div class="a-info"><div class="a-name">${item.main}</div><div class="a-name-en">${item.mainEn}</div></div>
+        <div class="a-err ${cls}">${rate}%</div>
+      </div>${subsHtml}`;
+    }).join('');
+  }
+}
+
+function toggleRecords(){
+  const more=document.getElementById('recordsMore');
+  const btn=document.querySelector('.more-btn');
+  if(!more||!btn) return;
+  const isOpen=(more.style.display==='block');
+  more.style.display=isOpen?'none':'block';
+  btn.textContent=isOpen?'更多紀錄... ('+more.querySelectorAll('.record-item').length+')':'收起';
+}
+
+function clearHistory(){ localStorage.removeItem(SKEY); renderHistory(); }
+</script>
+</body>
+</html>
