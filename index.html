@@ -766,7 +766,9 @@ function chooseStart(mode){
     state.customOptions={springs:true, reps:true}; // 完整模式包含所有
     beginGame(0);
   } else {
-    // 客製化模式：顯示配置畫面
+    // 客製化模式：隱藏頂部header和nav，顯示配置畫面
+    document.querySelector('.home-header').style.display='none';
+    document.querySelector('.home-nav').style.display='none';
     document.getElementById('startScreen').style.display='none';
     document.getElementById('customScreen').style.display='block';
     
@@ -806,6 +808,9 @@ function chooseStart(mode){
 }
 
 function backToStart(){
+  // 恢復顯示頂部header和nav
+  document.querySelector('.home-header').style.display='';
+  document.querySelector('.home-nav').style.display='';
   document.getElementById('customScreen').style.display='none';
   document.getElementById('startScreen').style.display='block';
 }
